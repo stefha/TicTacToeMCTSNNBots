@@ -174,6 +174,8 @@ class MCTSBot(Bot):
             game_clone.play_action(action)
             child = MCTSNode(game_clone, action, node)
             node.children.append(child)
+            sim_result = self.do_simulation(node)
+            self.backpropagate_simulation_result(sim_result)
         best_child = self.select_child_highest_visit_count(self.root)
         return best_child.incoming_action
 
@@ -191,9 +193,8 @@ class MCTSBot(Bot):
             return None
 
     def select_best_child_for_traversal(self, node):
-        # Insert UCT Formula here !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # node.children[np.argmax([child.wins for child in node.children])]
-        return node.children[math.floor(random.random() * len(node.children))]
+        uct_value_array = [self.calculate_uct_value(child) for child in node.children]
+        return node.children[np.argmax(uct_value_array)]
 
     def select_next_action_extension(self, node):
         used_actions = [child.incoming_action for child in node.children]
@@ -202,6 +203,12 @@ class MCTSBot(Bot):
             print('Deal with 0 avail actions!!!!')
         # Use Extension here ?
         return interesting_actions[math.floor(random.random() * len(interesting_actions))]
+
+    def calculate_uct_value(self, node):
+        domain_value = node.wins / node.visit_count
+        exploration_value = self.exploration * (
+            math.sqrt((2 * math.log(node.parent.visit_count)) / node.visit_count))
+        return domain_value + exploration_value
 
 
 class MCTSNode:
