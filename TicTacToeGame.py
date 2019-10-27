@@ -8,6 +8,7 @@ EMPTY = 0
 PLAYER_X = 1
 PLAYER_O = -1
 DRAW = 100000
+PLAYERS = [PLAYER_X, PLAYER_O]
 
 
 class Game(ABC):
@@ -32,7 +33,11 @@ class Game(ABC):
     #     pass
 
     @abstractmethod
-    def play_action(self, player, index):
+    def clone(self):
+        pass
+
+    @abstractmethod
+    def play_action(self, action):
         pass
 
     @abstractmethod
@@ -40,23 +45,43 @@ class Game(ABC):
         pass
 
 
-class TTTGame(Game):
-    def __init__(self, size):
+class TicTacToe(Game):
+    def __init__(self, size, state=None, turn=0, avail_actions=None, winner=EMPTY, current_player=None):
         self.size = size
-        self.state = np.full((size * size), EMPTY)
-        self.turn = 0
-        self.avail_actions = list(range(self.size * self.size))
-        self.winner = EMPTY
+        self.turn = turn
+        self.winner = winner
+
+        if state is None:
+            self.state = np.full((size * size), EMPTY)
+        else:
+            self.state = state
+
+        if avail_actions is None:
+            self.avail_actions = list(range(self.size * self.size))
+        else:
+            self.avail_actions = avail_actions
+        if current_player is None:
+            self.current_player = PLAYERS[self.turn % 2]
+        else:
+            self.current_player = current_player
+
+    def clone(self):
+        new_game = TicTacToe(self.size, np.copy(self.state), self.turn, np.copy(self.avail_actions), self.winner,
+                             self.current_player)
+
+        return new_game
 
     #
     # def available_actions(self):
     #     self.avail_actions = np.where(self.state == EMPTY)
     #     return self.avail_actions  # or actions[0]?
 
-    def play_action(self, player, index):
-        self.state[index] = player
+    def play_action(self, action):
+        self.state[action] = self.current_player
         self.turn += 1
-        self.avail_actions.remove(index)
+        self.current_player = PLAYERS[self.turn % 2]
+        self.avail_actions = np.delete(self.avail_actions, np.argwhere(self.avail_actions == action))
+        # self.avail_actions.remove(action)
         if self.turn >= 5:  # make 5 a magic number depending on the number of x needed in a row to win ?
             return self.check_winner()
         else:
@@ -137,16 +162,24 @@ class MCTSBot(Bot):
     def __init__(self, iterations=100, exploration=100):
         self.iterations = iterations
         self.exploration = exploration
+        self.root = None
 
     def select_action(self, game):
-        root = MCTSNode(game, None)
-        node = root
+        self.root = MCTSNode(game, None, None)
+        node = self.root
         for iteration in range(self.iterations):
             node = self.traverse_tree(node)
-            action = self.select_next_action(node)
-            game_clone = node.game.clone()  # TODO implement Clone
-            game_clone.play_action(game_clone.turn % 2,
-                                   action)  # TODO Think about best solution for player that takes action
+            action = self.select_next_action_extension(node)
+            game_clone = node.game.clone()
+            game_clone.play_action(action)
+            child = MCTSNode(game_clone, action, node)
+            node.children.append(child)
+        best_child = self.select_child_highest_visit_count(self.root)
+        return best_child.incoming_action
+
+    def select_child_highest_visit_count(self, root):
+        visit_counts = [child.visit_count for child in root.children]
+        return root.children[np.argmax(visit_counts)]
 
     def traverse_tree(self, node):
         if len(node.game.avail_actions) > len(node.children):
@@ -158,29 +191,31 @@ class MCTSBot(Bot):
             return None
 
     def select_best_child_for_traversal(self, node):
-
         # Insert UCT Formula here !!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        return node.children[np.argmax(node.children.wins)]
+        # node.children[np.argmax([child.wins for child in node.children])]
+        return node.children[math.floor(random.random() * len(node.children))]
 
-    def select_next_action(self, node):
+    def select_next_action_extension(self, node):
         used_actions = [child.incoming_action for child in node.children]
         interesting_actions = [action for action in node.game.avail_actions if action not in used_actions]
-
+        if len(interesting_actions) == 0:
+            print('Deal with 0 avail actions!!!!')
         # Use Extension here ?
-        return interesting_actions[(random.random() * len(interesting_actions))]
+        return interesting_actions[math.floor(random.random() * len(interesting_actions))]
 
 
 class MCTSNode:
-    def __init__(self, game, incoming_action):
+    def __init__(self, game, incoming_action, parent):
         self.game = game
         self.children = []
         self.incoming_action = incoming_action
         self.wins = 0
         self.visit_count = 0
+        self.parent = parent
 
 
 def play_game_till_end(size, bot_x, bot_o):
-    ttt = TTTGame(size)
+    ttt = TicTacToe(size)
     game_ended = EMPTY
     player = PLAYER_X
     bots = [bot_x, bot_o]
@@ -191,7 +226,7 @@ def play_game_till_end(size, bot_x, bot_o):
     return game_ended
 
 
-def play_many_games(number, size, bot_x=InOrderBot(), bot_y=RandBot()):
+def play_many_games(number, size, bot_x=RandBot(), bot_y=RandBot()):
     total_result = 0
     wins_player_x = 0
     wins_player_o = 0
@@ -221,7 +256,7 @@ def timeIt(function, args_list):
 
 
 def main():
-    timeIt(play_many_games, [100, 3, RandBot(), RandBot()])
+    timeIt(play_many_games, [100, 3, MCTSBot(), RandBot()])
     # if game_ended == DRAW:
     #     print('Game ended in a Draw!')
     # elif game_ended == PLAYER_X:
