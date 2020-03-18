@@ -12,6 +12,8 @@ PLAYER_O = -1
 DRAW = 100000
 PLAYERS = [PLAYER_X, PLAYER_O]
 
+DEBUG_PRINT = True
+
 
 class Game(ABC):
     #
@@ -75,7 +77,7 @@ class TicTacToe(Game):
             return 'O'
 
     def __init__(self, size, state=None, turn=0, avail_actions=None, winner=EMPTY, current_player=None, sum_lines=None,
-                 sum_rows=None, sum_diags=None):
+                 sum_rows=None, sum_diagonals=None):
         self.size = size
         self.turn = turn
         self.winner = winner
@@ -107,14 +109,15 @@ class TicTacToe(Game):
         else:
             self.sum_rows = sum_rows
 
-        if sum_diags is None:
-            self.sum_diags = np.asarray([0, 0])
+        if sum_diagonals is None:
+            self.sum_diagonals = np.asarray([0, 0])
         else:
-            self.sum_diags = sum_diags
+            self.sum_diagonals = sum_diagonals
 
     def clone(self):
         new_game = TicTacToe(self.size, np.copy(self.state), self.turn, np.copy(self.avail_actions), self.winner,
-                             self.current_player)
+                             self.current_player, np.copy(self.sum_lines), np.copy(self.sum_rows),
+                             np.copy(self.sum_diagonals))
         return new_game
 
     def is_finished(self):
@@ -126,10 +129,10 @@ class TicTacToe(Game):
         self.sum_lines[math.floor(action / self.size)] += self.current_player
         self.sum_rows[action % self.size] += self.current_player
         if action in self.diag_1:
-            self.sum_diags[0] += self.current_player
+            self.sum_diagonals[0] += self.current_player
 
         if action in self.diag_2:
-            self.sum_diags[1] += self.current_player
+            self.sum_diagonals[1] += self.current_player
 
         self.turn += 1
         self.current_player = PLAYERS[self.turn % 2]
@@ -181,7 +184,8 @@ class TicTacToe(Game):
 
         for player in ([PLAYER_X, PLAYER_O]):
             sum_player = player * self.size
-            if sum_player in self.sum_lines or sum_player in self.sum_rows or sum_player in self.sum_diags:
+            if sum_player in self.sum_lines or sum_player in self.sum_rows or sum_player in self.sum_diagonals:
+                self.winner = player
                 return player
 
         if self.turn == self.size * self.size:
@@ -309,6 +313,8 @@ def play_game_till_end(size, bot_x, bot_o):
         player = player * -1
     ttt.print()
     print('Win: ' + str(ttt.winner))
+    if DEBUG_PRINT:
+        print(' Rows: ' + str(ttt.sum_rows) + ' Lines: ' + str(ttt.sum_lines) + ' Diags: ' + str(ttt.sum_diagonals))
     return game_ended
 
 
@@ -342,16 +348,7 @@ def timeIt(function, args_list):
 
 
 def main():
-    timeIt(play_many_games, [10, 3, MCTSBot(1000, 0.1), MCTSBot(1000, 0.1)])
-    # if game_ended == DRAW:
-    #     print('Game ended in a Draw!')
-    # elif game_ended == PLAYER_X:
-    #     print('Player X won the game')
-    # elif game_ended == PLAYER_O:
-    #     print('Player O won the game')
-    # else:
-    #     print('Shit went wrong!!!!')
-
+    timeIt(play_many_games, [1, 3, MCTSBot(100, 0.1), MCTSBot(100, 0.1)])
 
 if __name__ == '__main__':
     main()
