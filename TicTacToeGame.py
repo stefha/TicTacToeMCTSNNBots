@@ -3,6 +3,7 @@ import random
 import numpy as np
 from timeit import default_timer as timer
 from abc import ABC, abstractmethod
+
 from prettytable import PrettyTable
 
 EMPTY = 0
@@ -38,7 +39,7 @@ class Game(ABC):
         pass
 
     @abstractmethod
-    def play_action(self, action):
+    def play_action(self, action, is_simulation=False):
         pass
 
     @abstractmethod
@@ -58,17 +59,29 @@ class TicTacToe(Game):
     def print(self):
         table = PrettyTable(['', 'Col1', 'Col2', 'Col3'])
         table.add_row(
-            ['Row1', emptyIfMinusTen(self.board[0]), emptyIfMinusTen(self.board[1]), emptyIfMinusTen(self.board[2])])
+            ['Row1', self.is_empty(self.state[0]), self.is_empty(self.state[1]), self.is_empty(self.state[2])])
         table.add_row(
-            ['Row2', emptyIfMinusTen(self.board[3]), emptyIfMinusTen(self.board[4]), emptyIfMinusTen(self.board[5])])
+            ['Row2', self.is_empty(self.state[3]), self.is_empty(self.state[4]), self.is_empty(self.state[5])])
         table.add_row(
-            ['Row3', emptyIfMinusTen(self.board[6]), emptyIfMinusTen(self.board[7]), emptyIfMinusTen(self.board[8])])
+            ['Row3', self.is_empty(self.state[6]), self.is_empty(self.state[7]), self.is_empty(self.state[8])])
         print(table)
 
-    def __init__(self, size, state=None, turn=0, avail_actions=None, winner=EMPTY, current_player=None):
+    def is_empty(self, number):
+        if number == EMPTY:
+            return ''
+        elif number == 1:
+            return 'X'
+        elif number == -1:
+            return 'O'
+
+    def __init__(self, size, state=None, turn=0, avail_actions=None, winner=EMPTY, current_player=None, sum_lines=None,
+                 sum_rows=None, sum_diags=None):
         self.size = size
         self.turn = turn
         self.winner = winner
+
+        self.diag_1 = np.asarray(range(0, self.size * self.size, self.size + 1))
+        self.diag_2 = np.asarray(range(self.size - 1, self.size * (self.size - 1) + 1, self.size - 1))
 
         if state is None:
             self.state = np.full((size * size), EMPTY)
@@ -76,13 +89,28 @@ class TicTacToe(Game):
             self.state = state
 
         if avail_actions is None:
-            self.avail_actions = list(range(self.size * self.size))
+            self.avail_actions = np.asarray(list(range(self.size * self.size)))
         else:
             self.avail_actions = avail_actions
         if current_player is None:
             self.current_player = PLAYERS[self.turn % 2]
         else:
             self.current_player = current_player
+
+        if sum_lines is None:
+            self.sum_lines = np.zeros(3, dtype=int)
+        else:
+            self.sum_lines = sum_lines
+
+        if sum_rows is None:
+            self.sum_rows = np.zeros(3, dtype=int)
+        else:
+            self.sum_rows = sum_rows
+
+        if sum_diags is None:
+            self.sum_diags = np.asarray([0, 0])
+        else:
+            self.sum_diags = sum_diags
 
     def clone(self):
         new_game = TicTacToe(self.size, np.copy(self.state), self.turn, np.copy(self.avail_actions), self.winner,
@@ -92,53 +120,68 @@ class TicTacToe(Game):
     def is_finished(self):
         return self.winner != EMPTY
 
-    def play_action(self, action):
+    def play_action(self, action, is_action_in_real_game=False):
         self.state[action] = self.current_player
+
+        self.sum_lines[math.floor(action / self.size)] += self.current_player
+        self.sum_rows[action % self.size] += self.current_player
+        if action in self.diag_1:
+            self.sum_diags[0] += self.current_player
+
+        if action in self.diag_2:
+            self.sum_diags[1] += self.current_player
+
         self.turn += 1
         self.current_player = PLAYERS[self.turn % 2]
-        self.avail_actions = np.delete(self.avail_actions, np.argwhere(self.avail_actions == action))
-        if self.turn >= 5:  # make 5 a magic number depending on the number of x needed in a row to win ?
+        self.avail_actions = self.avail_actions[self.avail_actions != action]
+
+        if self.turn >= self.size * 2 - 1:
             return self.check_winner()
         else:
             return EMPTY
 
     def check_winner(self):
         # i think both can be done in one , check with tests!!!1
+        #
+        # # lines
+        # for line in range(self.size):
+        #     sum_line = 0
+        #     for row in range(self.size):
+        #         position = line * self.size + row
+        #         sum_line += self.state[position]
+        #     for player in ([PLAYER_X, PLAYER_O]):
+        #         if sum_line == player * self.size:
+        #             self.winner = player
+        #             return player
+        # # rows
+        # for row in range(self.size):
+        #     sum_row = 0
+        #     for line in range(self.size):
+        #         position = line * self.size + row
+        #         sum_row += self.state[position]
+        #     for player in ([PLAYER_X, PLAYER_O]):
+        #         if sum_row == player * self.size:
+        #             self.winner = player
+        #             return player
+        #
+        # # diagonal1
+        # sum_diag_1 = 0
+        # sum_diag_2 = 0
+        # position_diag_1 = 0
+        # position_diag_2 = 0
+        # for index in range(self.size):
+        #     sum_diag_1 += self.state[position_diag_1]
+        #     sum_diag_2 += self.state[position_diag_2]
+        #     position_diag_1 += self.size + 1
+        #     position_diag_2 += self.size - 1
+        # for player in ([PLAYER_X, PLAYER_O]):
+        #     if sum_diag_1 == player * self.size or sum_diag_2 == player * self.size:
+        #         self.winner = player
+        #         return player
 
-        # lines
-        for line in range(self.size):
-            sum_line = 0
-            for row in range(self.size):
-                position = line * self.size + row
-                sum_line += self.state[position]
-            for player in ([PLAYER_X, PLAYER_O]):
-                if sum_line == player * self.size:
-                    self.winner = player
-                    return player
-        # rows
-        for row in range(self.size):
-            sum_row = 0
-            for line in range(self.size):
-                position = line * self.size + row
-                sum_row += self.state[position]
-            for player in ([PLAYER_X, PLAYER_O]):
-                if sum_row == player * self.size:
-                    self.winner = player
-                    return player
-
-        # diagonal1
-        sum_diag_1 = 0
-        sum_diag_2 = 0
-        position_diag_1 = 0
-        position_diag_2 = 0
-        for index in range(self.size):
-            sum_diag_1 += self.state[position_diag_1]
-            sum_diag_2 += self.state[position_diag_2]
-            position_diag_1 += self.size + 1
-            position_diag_2 += self.size - 1
         for player in ([PLAYER_X, PLAYER_O]):
-            if sum_diag_1 == player * self.size or sum_diag_2 == player * self.size:
-                self.winner = player
+            sum_player = player * self.size
+            if sum_player in self.sum_lines or sum_player in self.sum_rows or sum_player in self.sum_diags:
                 return player
 
         if self.turn == self.size * self.size:
@@ -174,7 +217,7 @@ class BackwardsInOrderBot(Bot):
 
 class MCTSBot(Bot):
 
-    def __init__(self, iterations=100, exploration=0.1):
+    def __init__(self, iterations=1000, exploration=0.1):
         self.iterations = iterations
         self.exploration = exploration
         self.root = None
@@ -260,9 +303,12 @@ def play_game_till_end(size, bot_x, bot_o):
     player = PLAYER_X
     bots = [bot_x, bot_o]
     while game_ended == EMPTY:
+        ttt.print()
         action = bots[ttt.turn % 2].select_action(ttt)
-        game_ended = ttt.play_action(action)
+        game_ended = ttt.play_action(action, is_action_in_real_game=True)
         player = player * -1
+    ttt.print()
+    print('Win: ' + str(ttt.winner))
     return game_ended
 
 
@@ -296,7 +342,7 @@ def timeIt(function, args_list):
 
 
 def main():
-    timeIt(play_many_games, [100, 3, MCTSBot(100, 0.1), MCTSBot(100, 0.1)])
+    timeIt(play_many_games, [10, 3, MCTSBot(1000, 0.1), MCTSBot(1000, 0.1)])
     # if game_ended == DRAW:
     #     print('Game ended in a Draw!')
     # elif game_ended == PLAYER_X:
