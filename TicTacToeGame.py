@@ -264,6 +264,8 @@ class MCTSBot(Bot):
         domain_value = node.wins / node.visit_count
         exploration_value = self.exploration * (
             math.sqrt((2 * math.log(node.parent.visit_count)) / node.visit_count))
+        node.exploration_value = exploration_value
+        node.domain_value = domain_value
         return domain_value + exploration_value
 
     def do_simulation(self, node):
@@ -292,6 +294,9 @@ class MCTSNode:
         self.wins = 0
         self.visit_count = 0
         self.parent = parent
+        self.exploration_value = 0
+        self.domain_value = 0
+        self.total_value = 0
 
     def is_fully_extended(self):
         return len(self.children) == len(self.game.avail_actions)
@@ -313,7 +318,8 @@ def add_children_to_tree(id, tree, node, node_name):
             wins = 'W' + stringify_winner(child.game.winner)
         child_name = 'ID' + str(id) + wins + '\n' + list_to_str(child.game.state)  #
         tree.node(child_name)
-        edge_label = 'A: ' + str(child.incoming_action) + ' V: ' + str(child.visit_count)
+        edge_label = 'A: ' + str(child.incoming_action) + ' V: ' + str(child.visit_count) + ' D: ' + str(
+            child.domain_value)[0:4] + ' UCT: ' + str(child.domain_value + child.exploration_value)[0:4]
         tree.edge(node_name, child_name, edge_label)
         id = add_children_to_tree(id, tree, child, child_name)
     return id
