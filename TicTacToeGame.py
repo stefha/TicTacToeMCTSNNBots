@@ -217,7 +217,7 @@ class BackwardsInOrderBot(Bot):
 
 class MCTSBot(Bot):
 
-    def __init__(self, iterations=1000, exploration=0.5):
+    def __init__(self, iterations=1000, exploration=0.3):
         self.iterations = iterations
         self.exploration = exploration
         self.root = None
@@ -318,7 +318,8 @@ def add_children_to_tree(id, tree, node, node_name):
             wins = 'W' + stringify_winner(child.game.winner)
         child_name = 'ID' + str(id) + wins + '\n' + list_to_str(child.game.state)  #
         tree.node(child_name)
-        edge_label = 'A: ' + str(child.incoming_action) + ' V: ' + str(child.visit_count) + ' D: ' + str(
+        edge_label = 'A: ' + str(child.incoming_action) + 'W: ' + str(child.wins) + ' V: ' + str(
+            child.visit_count) + ' D: ' + str(
             child.domain_value)[0:4] + ' UCT: ' + str(child.domain_value + child.exploration_value)[0:4]
         tree.edge(node_name, child_name, edge_label)
         id = add_children_to_tree(id, tree, child, child_name)

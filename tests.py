@@ -140,6 +140,26 @@ class TestCheckMCTS(unittest.TestCase):
         action = self.mcts_bot.select_action(self.ttt)
         TicTacToeGame.print_mcts_tree(self.mcts_bot.root)
 
+    def test_tree_plotting_final_three_options(self):
+        self.ttt.play_action(0)
+        self.ttt.play_action(3)
+        self.ttt.play_action(1)
+        self.ttt.play_action(8)
+        self.ttt.play_action(7)
+        self.ttt.play_action(6)
+        action = self.mcts_bot.select_action(self.ttt)
+        TicTacToeGame.print_mcts_tree(self.mcts_bot.root)
+
+    def test_tree_plotting_final_two_options(self):
+        self.ttt.play_action(0)
+        self.ttt.play_action(2)
+        self.ttt.play_action(1)
+        self.ttt.play_action(4)
+        self.ttt.play_action(3)
+        self.ttt.play_action(8)
+        self.ttt.play_action(5)
+        action = self.mcts_bot.select_action(self.ttt)
+        TicTacToeGame.print_mcts_tree(self.mcts_bot.root)
 
 if __name__ == '__main__':
     # suite = unittest.TestSuite()
