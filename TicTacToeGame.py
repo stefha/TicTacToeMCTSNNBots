@@ -9,7 +9,7 @@ from prettytable import PrettyTable
 EMPTY = 0
 PLAYER_X = 1
 PLAYER_O = -1
-DRAW = 100000
+DRAW = 10
 PLAYERS = [PLAYER_X, PLAYER_O]
 
 DEBUG_PRINT = True
