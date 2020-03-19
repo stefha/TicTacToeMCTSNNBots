@@ -3,6 +3,7 @@ import random
 import numpy as np
 from timeit import default_timer as timer
 from abc import ABC, abstractmethod
+from graphviz import Digraph
 
 from prettytable import PrettyTable
 
@@ -301,6 +302,28 @@ class MCTSNode:
         return len(self.children) == len(self.game.avail_actions)
 
 
+def print_mcts_tree(mcts_node):
+    g = Digraph('G', filename='hello.gv')
+    g.node('root')
+    add_children_to_tree(g, mcts_node, 'root')
+
+    g.view()
+
+
+def add_children_to_tree(tree, node, node_name):
+    for child in node.children:
+        child_name = list_to_str(child.game.state)
+        tree.node(child_name)
+        tree.edge(node_name, child_name, child.incoming_action)
+
+
+def list_to_str(state_list):
+    str = ''
+    for item in state_list:
+        str + str(item) + '|'
+    return str
+
+
 def play_game_till_end(size, bot_x, bot_o):
     ttt = TicTacToe(size)
     game_ended = EMPTY
@@ -349,6 +372,7 @@ def timeIt(function, args_list):
 
 def main():
     timeIt(play_many_games, [1, 3, MCTSBot(100, 0.1), MCTSBot(100, 0.1)])
+
 
 if __name__ == '__main__':
     main()

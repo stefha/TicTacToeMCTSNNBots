@@ -9,5 +9,6 @@ dependencies:
   - prettytable>=0.7.2,<1
   - scikit-learn>=0.20.2,<1
   - python-graphviz>=0.8.4,<1
+  - graphviz
 # - tensorflow==1.10.0
 # - keras==2.2.2
