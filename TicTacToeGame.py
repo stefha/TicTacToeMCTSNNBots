@@ -315,6 +315,7 @@ def add_children_to_tree(tree, node, node_name):
         child_name = list_to_str(child.game.state)
         tree.node(child_name)
         tree.edge(node_name, child_name, child.incoming_action)
+        add_children_to_tree(tree, child, child_name)
 
 
 def list_to_str(state_list):
