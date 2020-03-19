@@ -132,6 +132,14 @@ class TestCheckMCTS(unittest.TestCase):
             action += self.mcts_bot.select_action(self.ttt)
         self.assertTrue(action == 80)
 
+    def test_tree_plotting(self):
+        self.ttt.play_action(0)
+        self.ttt.play_action(3)
+        self.ttt.play_action(1)
+        self.ttt.play_action(8)
+        action = self.mcts_bot.select_action(self.ttt)
+        TicTacToeGame.print_mcts_tree(self.mcts_bot.root)
+
 
 if __name__ == '__main__':
     # suite = unittest.TestSuite()

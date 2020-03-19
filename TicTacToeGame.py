@@ -62,20 +62,14 @@ class TicTacToe(Game):
     def print(self):
         table = PrettyTable(['', 'Col1', 'Col2', 'Col3'])
         table.add_row(
-            ['Row1', self.is_empty(self.state[0]), self.is_empty(self.state[1]), self.is_empty(self.state[2])])
+            ['Row1', stringify(self.state[0]), stringify(self.state[1]), stringify(self.state[2])])
         table.add_row(
-            ['Row2', self.is_empty(self.state[3]), self.is_empty(self.state[4]), self.is_empty(self.state[5])])
+            ['Row2', stringify(self.state[3]), stringify(self.state[4]), stringify(self.state[5])])
         table.add_row(
-            ['Row3', self.is_empty(self.state[6]), self.is_empty(self.state[7]), self.is_empty(self.state[8])])
+            ['Row3', stringify(self.state[6]), stringify(self.state[7]), stringify(self.state[8])])
         print(table)
 
-    def is_empty(self, number):
-        if number == EMPTY:
-            return ''
-        elif number == 1:
-            return 'X'
-        elif number == -1:
-            return 'O'
+
 
     def __init__(self, size, state=None, turn=0, avail_actions=None, winner=EMPTY, current_player=None, sum_lines=None,
                  sum_rows=None, sum_diagonals=None):
@@ -304,8 +298,8 @@ class MCTSNode:
 
 def print_mcts_tree(mcts_node):
     g = Digraph('G', filename='hello.gv')
-    g.node('root')
-    add_children_to_tree(g, mcts_node, 'root')
+    g.node(list_to_str(mcts_node.game.state))
+    add_children_to_tree(g, mcts_node, list_to_str(mcts_node.game.state))
 
     g.view()
 
@@ -314,15 +308,26 @@ def add_children_to_tree(tree, node, node_name):
     for child in node.children:
         child_name = list_to_str(child.game.state)
         tree.node(child_name)
-        tree.edge(node_name, child_name, child.incoming_action)
+        tree.edge(node_name, child_name, str(child.incoming_action))
         add_children_to_tree(tree, child, child_name)
 
 
-def list_to_str(state_list):
-    str = ''
-    for item in state_list:
-        str + str(item) + '|'
-    return str
+def list_to_str(game_state):
+    state_description = stringify(game_state[0]) + '|' + stringify(game_state[1]) + '|' + stringify(
+        game_state[2]) + '\r\n' + stringify(game_state[3]) + '|' + stringify(game_state[4]) + '|' + stringify(
+        game_state[5]) + '\r\n' + stringify(game_state[6]) + '|' + stringify(game_state[7]) + '|' + stringify(
+        game_state[8])
+
+    return state_description
+
+
+def stringify(number):
+    if number == EMPTY:
+        return '   '
+    elif number == 1:
+        return 'X'
+    elif number == -1:
+        return 'O'
 
 
 def play_game_till_end(size, bot_x, bot_o):
