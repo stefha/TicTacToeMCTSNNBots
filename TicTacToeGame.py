@@ -62,14 +62,15 @@ class TicTacToe(Game):
     def print(self):
         table = PrettyTable(['', 'Col1', 'Col2', 'Col3'])
         table.add_row(
-            ['Row1', stringify(self.state[0]), stringify(self.state[1]), stringify(self.state[2])])
+            ['Row1', stringify_field_value(self.state[0]), stringify_field_value(self.state[1]),
+             stringify_field_value(self.state[2])])
         table.add_row(
-            ['Row2', stringify(self.state[3]), stringify(self.state[4]), stringify(self.state[5])])
+            ['Row2', stringify_field_value(self.state[3]), stringify_field_value(self.state[4]),
+             stringify_field_value(self.state[5])])
         table.add_row(
-            ['Row3', stringify(self.state[6]), stringify(self.state[7]), stringify(self.state[8])])
+            ['Row3', stringify_field_value(self.state[6]), stringify_field_value(self.state[7]),
+             stringify_field_value(self.state[8])])
         print(table)
-
-
 
     def __init__(self, size, state=None, turn=0, avail_actions=None, winner=EMPTY, current_player=None, sum_lines=None,
                  sum_rows=None, sum_diagonals=None):
@@ -216,7 +217,7 @@ class BackwardsInOrderBot(Bot):
 
 class MCTSBot(Bot):
 
-    def __init__(self, iterations=1000, exploration=0.1):
+    def __init__(self, iterations=1000, exploration=0.5):
         self.iterations = iterations
         self.exploration = exploration
         self.root = None
@@ -299,29 +300,49 @@ class MCTSNode:
 def print_mcts_tree(mcts_node):
     g = Digraph('G', filename='hello.gv')
     g.node(list_to_str(mcts_node.game.state))
-    add_children_to_tree(g, mcts_node, list_to_str(mcts_node.game.state))
+    add_children_to_tree(0, g, mcts_node, list_to_str(mcts_node.game.state))
 
     g.view()
 
 
-def add_children_to_tree(tree, node, node_name):
+def add_children_to_tree(id, tree, node, node_name):
     for child in node.children:
-        child_name = list_to_str(child.game.state)
+        id += 1
+        wins = ''
+        if child.game.winner != EMPTY:
+            wins = 'W' + stringify_winner(child.game.winner)
+        child_name = 'ID' + str(id) + wins + '\n' + list_to_str(child.game.state)  #
         tree.node(child_name)
-        tree.edge(node_name, child_name, str(child.incoming_action))
-        add_children_to_tree(tree, child, child_name)
+        edge_label = 'A: ' + str(child.incoming_action) + ' V: ' + str(child.visit_count)
+        tree.edge(node_name, child_name, edge_label)
+        id = add_children_to_tree(id, tree, child, child_name)
+    return id
 
 
 def list_to_str(game_state):
-    state_description = stringify(game_state[0]) + '|' + stringify(game_state[1]) + '|' + stringify(
-        game_state[2]) + '\r\n' + stringify(game_state[3]) + '|' + stringify(game_state[4]) + '|' + stringify(
-        game_state[5]) + '\r\n' + stringify(game_state[6]) + '|' + stringify(game_state[7]) + '|' + stringify(
+    state_description = stringify_field_value(game_state[0]) + '|' + stringify_field_value(
+        game_state[1]) + '|' + stringify_field_value(
+        game_state[2]) + '\n' + stringify_field_value(game_state[3]) + '|' + stringify_field_value(
+        game_state[4]) + '|' + stringify_field_value(
+        game_state[5]) + '\n' + stringify_field_value(game_state[6]) + '|' + stringify_field_value(
+        game_state[7]) + '|' + stringify_field_value(
         game_state[8])
 
     return state_description
 
 
-def stringify(number):
+def stringify_winner(number):
+    if number == EMPTY:
+        return ''
+    elif number == DRAW:
+        return 'D'
+    elif number == 1:
+        return 'X'
+    elif number == -1:
+        return 'O'
+
+
+def stringify_field_value(number):
     if number == EMPTY:
         return '   '
     elif number == 1:
