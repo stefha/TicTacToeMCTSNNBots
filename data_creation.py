@@ -21,13 +21,19 @@ def produce_data_actions(number_of_games, bot):
             state_list.append(state)
             action_list.append(action)
             winner = game.play_action(action)
-            winner_list.append(winner)
+
+        winner_list.extend([winner] * game.turn)
 
     next_data_directory = find_and_create_next_data_directory_name()
 
     df_states = pd.DataFrame({"state": state_list})
     df_actions = pd.DataFrame({"action": action_list})
     df_winners = pd.DataFrame({"winner": winner_list})
+
+    df_all_data = pd.DataFrame(list(zip(action_list, winner_list, state_list)),
+                               columns=['Action', 'Winner', 'State'])
+
+    df_all_data.to_csv(next_data_directory + 'all_data.csv', index=False)
     df_states.to_csv(next_data_directory + 'states.csv', index=False)
     df_actions.to_csv(next_data_directory + 'actions.csv', index=False)
     df_winners.to_csv(next_data_directory + 'winners.csv', index=False)
@@ -89,4 +95,4 @@ def timeIt(function, args_list):
 
 
 if __name__ == '__main__':
-    timeIt(produce_data_actions, [2, MCTSBot()])
+    timeIt(produce_data_actions, [100, MCTSBot()])
