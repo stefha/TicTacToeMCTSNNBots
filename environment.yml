@@ -10,5 +10,6 @@ dependencies:
   - scikit-learn>=0.20.2,<1
   - python-graphviz>=0.8.4,<1
   - graphviz>=2.42.3
-# - tensorflow==1.10.0
-# - keras==2.2.2
+  - pandas>=1.0
+  - tensorflow>=1.10.0
+  #- keras>=2.2.2
