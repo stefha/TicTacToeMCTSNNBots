@@ -17,7 +17,8 @@ def produce_data_actions(number_of_games, bot):
         winner = EMPTY
         while winner == EMPTY:
             action = bot.select_action(game)
-            state = np.copy(game.state)
+            state = np.copy(game.state).tolist()
+            # state_string = str(state)
             state_list.append(state)
             action_list.append(action)
             winner = game.play_action(action)
@@ -25,12 +26,13 @@ def produce_data_actions(number_of_games, bot):
         winner_list.extend([winner] * game.turn)
 
     next_data_directory = find_and_create_next_data_directory_name()
-
+    # test_array = np.asarray(state_list)
     df_states = pd.DataFrame({"state": state_list})
     df_actions = pd.DataFrame({"action": action_list})
     df_winners = pd.DataFrame({"winner": winner_list})
 
-    df_all_data = pd.DataFrame(list(zip(action_list, winner_list, state_list)),
+    total_data_list = list(zip(action_list, winner_list, state_list))
+    df_all_data = pd.DataFrame(total_data_list,
                                columns=['Action', 'Winner', 'State'])
 
     df_all_data.to_csv(next_data_directory + 'all_data.csv', index=False)
@@ -95,4 +97,4 @@ def timeIt(function, args_list):
 
 
 if __name__ == '__main__':
-    timeIt(produce_data_actions, [100, MCTSBot()])
+    timeIt(produce_data_actions, [2, MCTSBot()])

@@ -11,5 +11,5 @@ dependencies:
   - python-graphviz>=0.8.4,<1
   - graphviz>=2.42.3
   - pandas>=1.0
-  - tensorflow>=1.10.0
+  - tensorflow>=2.1.0
   #- keras>=2.2.2
