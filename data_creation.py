@@ -10,6 +10,15 @@ import pandas as pd
 
 def produce_data_actions(number_of_games, bot):
     state_list = list()
+    state_list0 = list()
+    state_list1 = list()
+    state_list2 = list()
+    state_list3 = list()
+    state_list4 = list()
+    state_list5 = list()
+    state_list6 = list()
+    state_list7 = list()
+    state_list8 = list()
     action_list = list()
     winner_list = list()
     for count in range(number_of_games):
@@ -18,22 +27,36 @@ def produce_data_actions(number_of_games, bot):
         while winner == EMPTY:
             action = bot.select_action(game)
             state = np.copy(game.state).tolist()
-            # state_string = str(state)
             state_list.append(state)
+            state_list0.append(game.state[0])
+            state_list1.append(game.state[1])
+            state_list2.append(game.state[2])
+            state_list3.append(game.state[3])
+            state_list4.append(game.state[4])
+            state_list5.append(game.state[5])
+            state_list6.append(game.state[6])
+            state_list7.append(game.state[7])
+            state_list8.append(game.state[8])
             action_list.append(action)
             winner = game.play_action(action)
 
         winner_list.extend([winner] * game.turn)
 
     next_data_directory = find_and_create_next_data_directory_name()
-    # test_array = np.asarray(state_list)
-    df_states = pd.DataFrame({"state": state_list})
+
+    df_states = pd.DataFrame(
+        {"state0": state_list0, "state1": state_list1, "state2": state_list2, "state3": state_list3,
+         "state4": state_list4, "state5": state_list5, "state6": state_list6, "state7": state_list7,
+         "state8": state_list8})
     df_actions = pd.DataFrame({"action": action_list})
     df_winners = pd.DataFrame({"winner": winner_list})
 
-    total_data_list = list(zip(action_list, winner_list, state_list))
+    total_data_list = list(
+        zip(action_list, winner_list, state_list0, state_list1, state_list2, state_list3, state_list4, state_list5,
+            state_list6, state_list7, state_list8))
     df_all_data = pd.DataFrame(total_data_list,
-                               columns=['Action', 'Winner', 'State'])
+                               columns=['Action', 'Winner', 'State0', 'State1', 'State2', 'State3', 'State4', 'State5',
+                                        'State6', 'State7', 'State8'])
 
     df_all_data.to_csv(next_data_directory + 'all_data.csv', index=False)
     df_states.to_csv(next_data_directory + 'states.csv', index=False)
@@ -97,4 +120,4 @@ def timeIt(function, args_list):
 
 
 if __name__ == '__main__':
-    timeIt(produce_data_actions, [2, MCTSBot()])
+    timeIt(produce_data_actions, [10, MCTSBot()])

@@ -3,23 +3,23 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import models, layers
 
-import ast
+
+def create_input_data_pipeline():
+    csv_file = 'data/8/all_data.csv'
+    input_data_pipeline = tf.data.experimental.make_csv_dataset(csv_file, batch_size=4, label_name='Action',
+                                                                select_columns=['Action', 'State0', 'State1', 'State2',
+                                                                                'State3', 'State4', 'State5', 'State6',
+                                                                                'State7', 'State8'])
+
+    return input_data_pipeline
 
 
-def load_data():
-    csv_file = 'data/6/all_data.csv'
-    # action_df = pd.read_csv(csv_file, index_col=None)
-    # data_slice = tf.data.Dataset.from_tensor_slices(action_df)
-
-    tf.enable_eager_execution()
-    input_data_pipeline = tf.data.experimental.make_csv_dataset(csv_file, batch_size=4, label_name='Actions',
-                                                                select_columns=['Actions', 'States'])
-    # input_data_pipeline = input_data_pipeline[2].eval()
+def test_load_data():
+    input_data_pipeline = create_input_data_pipeline()
     for feature_batch, label_batch in input_data_pipeline.take(1):
         print('Actions: {}'.format(label_batch))
         for key, value in feature_batch.items():
             print("  {!r:20s}: {}".format(key, value))
-
 
 def load_data_constants_test():
     labels = tf.constant([4, 0, 2, 6, 3, 5])
@@ -34,19 +34,6 @@ def load_data_constants_test():
         print(element)
 
 
-def load_data_pandas():
-    csv_file = 'data/7/all_data.csv'
-    action_df = pd.read_csv(csv_file, index_col=None, converters={2: converterer})
-
-    data_slice = tf.data.Dataset.from_tensor_slices(action_df)
-
-
-def converterer(string):
-    new = ast.literal_eval(string)
-    # new = np.asarray(new)
-    return new
-
-
 def create_model():
     model = models.Sequential()
     model.add(layers.Dense(
@@ -57,22 +44,27 @@ def create_model():
     model.add(layers.Dense(16, activation="relu"))
     model.add(layers.Dense(1, activation="sigmoid"))
 
-    model.summary()
-
     model.compile(
         optimizer="rmsprop",
         loss="binary_crossentropy",
         metrics=["accuracy"]
     )
 
-    pred_label = model.predict(np.array([[-1, 0, 1, 0, 1, 0, -1, 0, 0], [-1, 0, 1, 0, 1, 0, 0, 0, 0]]))
-    print(pred_label[0][0])
-    print(pred_label[1][0])
+    return model
+
+
+def use_model():
+    input_data_pipeline = create_input_data_pipeline()
+    data_batch = input_data_pipeline.take(1)
+    model = create_model()
+    for feature_batch, label_batch in data_batch:
+        values = feature_batch.values()
+        value0 = list(values)[0]
+        print(value0)
+        pred_label = model.predict(feature_batch)
+        print('Actions: {}'.format(label_batch))
+        print('Label predicted:' + pred_label[0][0])
 
 
 if __name__ == '__main__':
-    #   test = eval('[0 1 0 1]')  #ast.literal_
-    #  print(test)
-    #    load_data()
-    # create_model()
-    load_data_constants_test()
+    use_model()
