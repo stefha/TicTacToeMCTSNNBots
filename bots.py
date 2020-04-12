@@ -6,7 +6,7 @@ import numpy as np
 from graphviz import Digraph
 
 from tictactoe_game import stringify_field_value
-from definitions import EMPTY, DRAW
+from definitions import DRAW, GAME_STILL_RUNNING
 
 
 class Bot(ABC):
@@ -110,7 +110,7 @@ class MCTSBot(Bot):
 
     def do_simulation(self, node):
         cloned_game = node.game.clone()
-        while cloned_game.winner == EMPTY:
+        while cloned_game.winner == GAME_STILL_RUNNING:
             # Start with rand simulations
             rand_action = cloned_game.avail_actions[math.floor(len(cloned_game.avail_actions) * random.random())]
             cloned_game.play_action(rand_action)
@@ -154,7 +154,7 @@ def add_children_to_tree(id, tree, node, node_name):
     for child in node.children:
         id += 1
         wins = ''
-        if child.game.winner != EMPTY:
+        if child.game.winner != GAME_STILL_RUNNING:
             wins = 'W' + stringify_winner(child.game.winner)
         child_name = 'ID' + str(id) + wins + '\n' + list_to_str(child.game.state)  #
         tree.node(child_name)
@@ -179,7 +179,7 @@ def list_to_str(game_state):
 
 
 def stringify_winner(number):
-    if number == EMPTY:
+    if number == GAME_STILL_RUNNING:
         return ''
     elif number == DRAW:
         return 'D'

@@ -4,7 +4,7 @@ import numpy as np
 from abc import ABC, abstractmethod
 from prettytable import PrettyTable
 
-from definitions import EMPTY, PLAYER_X, PLAYER_O, DRAW, PLAYERS
+from definitions import EMPTY, PLAYER_X, PLAYER_O, DRAW, PLAYERS, GAME_STILL_RUNNING
 
 
 class Game(ABC):
@@ -44,7 +44,8 @@ class TicTacToe(Game):
              stringify_field_value(self.state[8])])
         print(table)
 
-    def __init__(self, size, state=None, turn=0, avail_actions=None, winner=EMPTY, current_player=None, sum_lines=None,
+    def __init__(self, size, state=None, turn=0, avail_actions=None, winner=GAME_STILL_RUNNING, current_player=None,
+                 sum_lines=None,
                  sum_rows=None, sum_diagonals=None):
         self.size = size
         self.turn = turn
@@ -89,7 +90,7 @@ class TicTacToe(Game):
         return new_game
 
     def is_finished(self):
-        return self.winner != EMPTY
+        return self.winner != GAME_STILL_RUNNING
 
     def play_action(self, action, is_action_in_real_game=False):
         self.state[action] = self.current_player
@@ -109,7 +110,7 @@ class TicTacToe(Game):
         if self.turn >= self.size * 2 - 1:
             return self.check_winner()
         else:
-            return EMPTY
+            return GAME_STILL_RUNNING
 
     def check_winner(self):
         for player in ([PLAYER_X, PLAYER_O]):
@@ -122,8 +123,8 @@ class TicTacToe(Game):
             self.winner = DRAW
             return DRAW
         else:
-            self.winner = EMPTY
-            return EMPTY
+            self.winner = GAME_STILL_RUNNING
+            return GAME_STILL_RUNNING
 
 
 def stringify_field_value(number):

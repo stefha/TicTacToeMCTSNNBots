@@ -2,16 +2,18 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import models, layers
+from sklearn.model_selection import train_test_split
 
 
 def create_input_data_pipeline():
     csv_file = 'data/8/all_data.csv'
-    input_data_pipeline = tf.data.experimental.make_csv_dataset(csv_file, batch_size=4, label_name='Action',
+
+    input_data_pipeline = tf.data.experimental.make_csv_dataset(csv_file, batch_size=9, label_name='Action',
                                                                 select_columns=['Action', 'State0', 'State1', 'State2',
                                                                                 'State3', 'State4', 'State5', 'State6',
                                                                                 'State7', 'State8'])
-
-    return input_data_pipeline
+    input_batches = (input_data_pipeline.cache().repeat().shuffle(500)).prefetch(tf.data.experimental.AUTOTUNE)
+    return input_batches
 
 
 def test_load_data():
@@ -21,20 +23,54 @@ def test_load_data():
         for key, value in feature_batch.items():
             print("  {!r:20s}: {}".format(key, value))
 
+
 def load_data_constants_test():
     labels = tf.constant([4, 0, 2, 6, 3, 5])
     features = tf.constant([[0, 0, 0, 0, 1, 0, 0, 0, 0], [-1, 0, 0, 0, 1, 0, 0, 0, 0], [-1, 0, 1, 0, 1, 0, 0, 0, 0],
                             [-1, 0, 1, 0, 1, 0, -1, 0, 0], [-1, 0, 1, 1, 1, 0, -1, 0, 0],
                             [-1, 0, 1, 1, 1, -1, -1, 0, 0]])
     dataset = tf.data.Dataset.from_tensor_slices((features, labels))
-    features_dataset = tf.data.Dataset.from_tensor_slices(features)
-    labels_dataset = tf.data.Dataset.from_tensor_slices(labels)
-    dataset = tf.data.Dataset.zip((features_dataset, labels_dataset))
+    # features_dataset = tf.data.Dataset.from_tensor_slices(features)
+    # labels_dataset = tf.data.Dataset.from_tensor_slices(labels)
+    # dataset = tf.data.Dataset.zip((features_dataset, labels_dataset))
     for element in dataset:
         print(element)
 
 
-def create_model():
+def load_data_winners_pandas():
+    csv_folder = 'data/9/'
+    states = pd.read_csv(csv_folder + 'states.csv')
+    numpy_states = states.to_numpy()
+    reformatted_states = numpy_states  # .transpose()
+    print(reformatted_states.shape)
+
+    actions = pd.read_csv(csv_folder + 'winners.csv')
+    actions_reformatted = actions.to_numpy().flatten()
+    print(actions_reformatted.shape)
+
+    dataset = tf.data.Dataset.from_tensor_slices((reformatted_states, actions_reformatted))
+    dataset = dataset.shuffle(1000).batch(32)
+    return dataset
+
+
+def load_data_pandas(folder_number=1, output='actions'):
+    csv_folder = 'data/' + str(folder_number) + '/'
+
+    states = pd.read_csv(csv_folder + 'states.csv').to_numpy()
+    outputs = pd.read_csv(csv_folder + output + '.csv').to_numpy().flatten()
+
+    states_train, states_test, output_train, output_test = train_test_split(states, outputs, test_size=0.33,
+                                                                            random_state=42)
+
+    train_dataset = tf.data.Dataset.from_tensor_slices((states_train, output_train))
+    train_dataset = train_dataset.shuffle(1000).batch(32)
+
+    test_dataset = tf.data.Dataset.from_tensor_slices((states_test, output_test))
+    test_dataset = test_dataset.shuffle(1000).batch(32)
+    return train_dataset, test_dataset
+
+
+def create_model(output_activation_function="tanh"):
     model = models.Sequential()
     model.add(layers.Dense(
         16,
@@ -42,7 +78,7 @@ def create_model():
         input_shape=(9,)
     ))
     model.add(layers.Dense(16, activation="relu"))
-    model.add(layers.Dense(1, activation="sigmoid"))
+    model.add(layers.Dense(1, activation=output_activation_function))
 
     model.compile(
         optimizer="rmsprop",
@@ -53,18 +89,20 @@ def create_model():
     return model
 
 
-def use_model():
-    input_data_pipeline = create_input_data_pipeline()
-    data_batch = input_data_pipeline.take(1)
-    model = create_model()
-    for feature_batch, label_batch in data_batch:
-        values = feature_batch.values()
-        value0 = list(values)[0]
-        print(value0)
-        pred_label = model.predict(feature_batch)
-        print('Actions: {}'.format(label_batch))
-        print('Label predicted:' + pred_label[0][0])
+def train_model():
+    train_dataset, test_dataset = load_data_pandas(folder_number=11, output='winners')
+    model = create_model('tanh')
+    pred = model.fit(train_dataset, epochs=10)
+    print(pred)
+    acc, loss = model.evaluate(test_dataset)
+    print(acc)
+    print(loss)
+
+    pred = model.predict(test_dataset)
+    print(pred)
 
 
 if __name__ == '__main__':
-    use_model()
+    # load_data_constants_test()
+    train_model()
+    # load_data_pandas()

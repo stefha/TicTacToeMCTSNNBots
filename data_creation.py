@@ -2,7 +2,7 @@ import os
 
 import tictactoe_game
 from bots import MCTSBot, RandBot
-from definitions import EMPTY, PLAYER_X, PLAYER_O, DRAW, PLAYERS, DEBUG_PRINT
+from definitions import PLAYER_X, PLAYER_O, DRAW, PLAYERS, DEBUG_PRINT, GAME_STILL_RUNNING
 from timeit import default_timer as timer
 import numpy as np
 import pandas as pd
@@ -22,11 +22,15 @@ def produce_data_actions(number_of_games, bot):
     action_list = list()
     winner_list = list()
     for count in range(number_of_games):
+        if count % 100 == 0:
+            print(str(count))
         game = tictactoe_game.TicTacToe(3)
-        winner = EMPTY
-        while winner == EMPTY:
+        winner = GAME_STILL_RUNNING
+        while winner == GAME_STILL_RUNNING:
             action = bot.select_action(game)
             state = np.copy(game.state).tolist()
+            if game.turn % 2 == 1:
+                state = np.multiply(state, -1)  # always show the game state form perspective of player 1
             state_list.append(state)
             state_list0.append(game.state[0])
             state_list1.append(game.state[1])
@@ -75,10 +79,10 @@ def find_and_create_next_data_directory_name():
 
 def play_game_till_end(size, bot_x, bot_o):
     ttt = tictactoe_game.TicTacToe(size)
-    game_ended = EMPTY
+    game_ended = GAME_STILL_RUNNING
     player = PLAYER_X
     bots = [bot_x, bot_o]
-    while game_ended == EMPTY:
+    while game_ended == GAME_STILL_RUNNING:
         ttt.print()
         action = bots[ttt.turn % 2].select_action(ttt)
         game_ended = ttt.play_action(action, is_action_in_real_game=True)
@@ -120,4 +124,4 @@ def timeIt(function, args_list):
 
 
 if __name__ == '__main__':
-    timeIt(produce_data_actions, [10, MCTSBot()])
+    timeIt(produce_data_actions, [1000, MCTSBot(iterations=1000)])
