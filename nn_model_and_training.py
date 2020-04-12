@@ -63,10 +63,10 @@ def load_data_pandas(folder_number=1, output='actions'):
                                                                             random_state=42)
 
     train_dataset = tf.data.Dataset.from_tensor_slices((states_train, output_train))
-    train_dataset = train_dataset.shuffle(1000).batch(32)
+    train_dataset = train_dataset.shuffle(1000).batch(500)
 
     test_dataset = tf.data.Dataset.from_tensor_slices((states_test, output_test))
-    test_dataset = test_dataset.shuffle(1000).batch(32)
+    test_dataset = test_dataset.shuffle(1000).batch(500)
     return train_dataset, test_dataset
 
 
@@ -89,20 +89,45 @@ def create_model(output_activation_function="tanh"):
     return model
 
 
-def train_model():
-    train_dataset, test_dataset = load_data_pandas(folder_number=11, output='winners')
-    model = create_model('tanh')
-    pred = model.fit(train_dataset, epochs=10)
-    print(pred)
-    acc, loss = model.evaluate(test_dataset)
-    print(acc)
-    print(loss)
+def create_callbacks_array(folder_number=12):
+    folder = '/data/' + str(folder_number) + '/'
+    callbacks = [
+        tf.keras.callbacks.EarlyStopping(
+            # Stop training when `val_loss` is no longer improving
+            monitor='val_loss',
+            # "no longer improving" being defined as "no better than 1e-2 less"
+            min_delta=1e-2,
+            # "no longer improving" being further defined as "for at least 2 epochs"
+            patience=2,
+            verbose=1),
+        tf.keras.callbacks.ModelCheckpoint(
+            filepath=folder + 'mymodel_{epoch}',
+            # Path where to save the model
+            # The two parameters below mean that we will overwrite
+            # the current checkpoint if and only if
+            # the `val_loss` score has improved.
+            save_best_only=True,
+            monitor='val_loss',
+            verbose=1)
+    ]
+    return callbacks
 
-    pred = model.predict(test_dataset)
-    print(pred)
+
+def train_model():
+    folder_number = 12
+    train_dataset, test_dataset = load_data_pandas(folder_number=folder_number, output='winners')
+    model = create_model(output_activation_function='tanh')
+    callbacks = create_callbacks_array(folder_number=folder_number)
+    history = model.fit(train_dataset, epochs=10, callbacks=callbacks,
+                        validation_data=test_dataset)  # , validation_split=0.2
+    print(history)
+    # acc, loss = model.evaluate(test_dataset)
+    # print(acc)
+    # print(loss)
+    #
+    # pred = model.predict(test_dataset)
+    # print(pred)
 
 
 if __name__ == '__main__':
-    # load_data_constants_test()
     train_model()
-    # load_data_pandas()

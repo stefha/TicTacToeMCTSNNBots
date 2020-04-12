@@ -44,7 +44,8 @@ def produce_data_actions(number_of_games, bot):
             action_list.append(action)
             winner = game.play_action(action)
 
-        winner_list.extend([winner] * game.turn)
+        winner_list.extend(
+            [winner] * game.turn)  # this needs to be adapted due to multiplying state by -1 if its Player o term
 
     next_data_directory = find_and_create_next_data_directory_name()
 
