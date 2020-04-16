@@ -3,6 +3,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import models, layers
 from sklearn.model_selection import train_test_split
+import matplotlib.pyplot as plt
 
 
 def create_input_data_pipeline():
@@ -41,7 +42,7 @@ def load_data_winners_pandas():
     csv_folder = 'data/9/'
     states = pd.read_csv(csv_folder + 'states.csv')
     numpy_states = states.to_numpy()
-    reformatted_states = numpy_states  # .transpose()
+    reformatted_states = numpy_states
     print(reformatted_states.shape)
 
     actions = pd.read_csv(csv_folder + 'winners.csv')
@@ -90,27 +91,57 @@ def create_model(output_activation_function="tanh"):
 
 
 def create_callbacks_array(folder_number=12):
-    folder = '/data/' + str(folder_number) + '/'
+    folder = './data/' + str(folder_number) + '/'
+    early_stopping = tf.keras.callbacks.EarlyStopping(
+        # Stop training when `val_loss` is no longer improving
+        monitor='val_loss',
+        # "no longer improving" being defined as "no better than 1e-2 less"
+        min_delta=1e-2,
+        # "no longer improving" being further defined as "for at least 2 epochs"
+        patience=2,
+        verbose=1)
+    model_checkpoint = tf.keras.callbacks.ModelCheckpoint(
+        filepath=folder + 'mymodel_{epoch}',
+        # Path where to save the model
+        # The two parameters below mean that we will overwrite
+        # the current checkpoint if and only if
+        # the `val_loss` score has improved.
+        save_best_only=True,
+        monitor='val_loss',
+        verbose=1)
+    log_dir = folder + 'tensorboard_log'
+    tensorboard_callback = tf.keras.callbacks.TensorBoard(log_dir=log_dir, histogram_freq=1)
+
     callbacks = [
-        tf.keras.callbacks.EarlyStopping(
-            # Stop training when `val_loss` is no longer improving
-            monitor='val_loss',
-            # "no longer improving" being defined as "no better than 1e-2 less"
-            min_delta=1e-2,
-            # "no longer improving" being further defined as "for at least 2 epochs"
-            patience=2,
-            verbose=1),
-        tf.keras.callbacks.ModelCheckpoint(
-            filepath=folder + 'mymodel_{epoch}',
-            # Path where to save the model
-            # The two parameters below mean that we will overwrite
-            # the current checkpoint if and only if
-            # the `val_loss` score has improved.
-            save_best_only=True,
-            monitor='val_loss',
-            verbose=1)
+        early_stopping,
+        model_checkpoint,
+        tensorboard_callback
     ]
     return callbacks
+
+
+def visualize_history(history, folder_number):
+    folder = './data/' + str(folder_number) + '/'
+
+    # Plot training & validation accuracy values
+    plt.plot(history.history['accuracy'])
+    plt.plot(history.history['val_accuracy'])
+    plt.title('Model accuracy')
+    plt.ylabel('Accuracy')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Test'], loc='upper left')
+    plt.savefig(folder + 'acc_plot.png')
+    # plt.show()
+
+    # Plot training & validation loss values
+    plt.plot(history.history['loss'])
+    plt.plot(history.history['val_loss'])
+    plt.title('Model loss')
+    plt.ylabel('Loss')
+    plt.xlabel('Epoch')
+    plt.legend(['Train', 'Test'], loc='upper left')
+    plt.savefig(folder + 'loss_plot.png')
+    # plt.show()
 
 
 def train_model():
@@ -120,13 +151,7 @@ def train_model():
     callbacks = create_callbacks_array(folder_number=folder_number)
     history = model.fit(train_dataset, epochs=10, callbacks=callbacks,
                         validation_data=test_dataset)  # , validation_split=0.2
-    print(history)
-    # acc, loss = model.evaluate(test_dataset)
-    # print(acc)
-    # print(loss)
-    #
-    # pred = model.predict(test_dataset)
-    # print(pred)
+    visualize_history(history=history, folder_number=folder_number)
 
 
 if __name__ == '__main__':

@@ -9,7 +9,7 @@ import pandas as pd
 
 
 def produce_data_actions(number_of_games, bot):
-    state_list = list()
+    # state_list = list()
     state_list0 = list()
     state_list1 = list()
     state_list2 = list()
@@ -21,6 +21,7 @@ def produce_data_actions(number_of_games, bot):
     state_list8 = list()
     action_list = list()
     winner_list = list()
+    temp_winner_list = list()
     for count in range(number_of_games):
         if count % 100 == 0:
             print(str(count))
@@ -29,23 +30,26 @@ def produce_data_actions(number_of_games, bot):
         while winner == GAME_STILL_RUNNING:
             action = bot.select_action(game)
             state = np.copy(game.state).tolist()
+            perspective_indicator = 1
             if game.turn % 2 == 1:
                 state = np.multiply(state, -1)  # always show the game state form perspective of player 1
-            state_list.append(state)
-            state_list0.append(game.state[0])
-            state_list1.append(game.state[1])
-            state_list2.append(game.state[2])
-            state_list3.append(game.state[3])
-            state_list4.append(game.state[4])
-            state_list5.append(game.state[5])
-            state_list6.append(game.state[6])
-            state_list7.append(game.state[7])
-            state_list8.append(game.state[8])
+                perspective_indicator = perspective_indicator * -1
+            #           state_list.append(state)
+            state_list0.append(state[0])
+            state_list1.append(state[1])
+            state_list2.append(state[2])
+            state_list3.append(state[3])
+            state_list4.append(state[4])
+            state_list5.append(state[5])
+            state_list6.append(state[6])
+            state_list7.append(state[7])
+            state_list8.append(state[8])
             action_list.append(action)
+            temp_winner_list.append(perspective_indicator)
             winner = game.play_action(action)
 
-        winner_list.extend(
-            [winner] * game.turn)  # this needs to be adapted due to multiplying state by -1 if its Player o term
+        temp_winner_list = [perspective_indicator * winner for perspective_indicator in temp_winner_list]
+        winner_list.extend(temp_winner_list)
 
     next_data_directory = find_and_create_next_data_directory_name()
 
@@ -125,4 +129,4 @@ def timeIt(function, args_list):
 
 
 if __name__ == '__main__':
-    timeIt(produce_data_actions, [1000, MCTSBot(iterations=1000)])
+    timeIt(produce_data_actions, [10, MCTSBot(iterations=1000)])
