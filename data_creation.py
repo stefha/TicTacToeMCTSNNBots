@@ -21,12 +21,13 @@ def produce_data_actions(number_of_games, bot):
     state_list8 = list()
     action_list = list()
     winner_list = list()
-    temp_winner_list = list()
+
     for count in range(number_of_games):
         if count % 100 == 0:
             print(str(count))
         game = tictactoe_game.TicTacToe(3)
         winner = GAME_STILL_RUNNING
+        temp_winner_list = list()
         while winner == GAME_STILL_RUNNING:
             action = bot.select_action(game)
             state = np.copy(game.state).tolist()
@@ -129,4 +130,4 @@ def timeIt(function, args_list):
 
 
 if __name__ == '__main__':
-    timeIt(produce_data_actions, [10, MCTSBot(iterations=1000)])
+    timeIt(produce_data_actions, [1000, MCTSBot(iterations=1000)])

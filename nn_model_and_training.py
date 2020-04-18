@@ -54,24 +54,26 @@ def load_data_winners_pandas():
     return dataset
 
 
-def load_data_pandas(folder_number=1, output='actions'):
+def load_data_pandas(folder_number=1, output_type='winners', batch_size=50, shuffle_cache=1000):
     csv_folder = 'data/' + str(folder_number) + '/'
 
     states = pd.read_csv(csv_folder + 'states.csv').to_numpy()
-    outputs = pd.read_csv(csv_folder + output + '.csv').to_numpy().flatten()
+    outputs = pd.read_csv(csv_folder + output_type + '.csv').to_numpy().flatten()
+    if output_type == 'actions':
+        outputs = tf.keras.utils.to_categorical(outputs)
 
     states_train, states_test, output_train, output_test = train_test_split(states, outputs, test_size=0.33,
                                                                             random_state=42)
 
     train_dataset = tf.data.Dataset.from_tensor_slices((states_train, output_train))
-    train_dataset = train_dataset.shuffle(1000).batch(500)
+    train_dataset = train_dataset.shuffle(shuffle_cache).batch(batch_size)
 
     test_dataset = tf.data.Dataset.from_tensor_slices((states_test, output_test))
-    test_dataset = test_dataset.shuffle(1000).batch(500)
+    test_dataset = test_dataset.shuffle(shuffle_cache).batch(batch_size)
     return train_dataset, test_dataset
 
 
-def create_model(output_activation_function="tanh"):
+def create_model(output_type='winners'):
     model = models.Sequential()
     model.add(layers.Dense(
         16,
@@ -79,13 +81,22 @@ def create_model(output_activation_function="tanh"):
         input_shape=(9,)
     ))
     model.add(layers.Dense(16, activation="relu"))
-    model.add(layers.Dense(1, activation=output_activation_function))
 
-    model.compile(
-        optimizer="rmsprop",
-        loss="binary_crossentropy",
-        metrics=["accuracy"]
-    )
+    if output_type == 'winners':
+        model.add(layers.Dense(1, activation='tanh'))
+        model.compile(
+            optimizer="rmsprop",
+            loss="binary_crossentropy",  # or try 'hinge' loss function
+            metrics=["accuracy"]
+        )
+
+    elif output_type == 'actions':
+        model.add(layers.Dense(9, activation='softmax'))
+        model.compile(
+            optimizer="rmsprop",
+            loss="categorical_crossentropy",
+            metrics=["accuracy"]
+        )
 
     return model
 
@@ -101,7 +112,7 @@ def create_callbacks_array(folder_number=12):
         patience=2,
         verbose=1)
     model_checkpoint = tf.keras.callbacks.ModelCheckpoint(
-        filepath=folder + 'mymodel_{epoch}',
+        filepath=folder + 'mymodel',  # _{epoch}
         # Path where to save the model
         # The two parameters below mean that we will overwrite
         # the current checkpoint if and only if
@@ -146,11 +157,16 @@ def visualize_history(history, folder_number):
 
 def train_model():
     folder_number = 12
-    train_dataset, test_dataset = load_data_pandas(folder_number=folder_number, output='winners')
-    model = create_model(output_activation_function='tanh')
+    batch_size = 50
+    epochs = 30
+    output = 'actions'
+
+    train_dataset, test_dataset = load_data_pandas(folder_number=folder_number, output_type=output,
+                                                   batch_size=batch_size)
+    model = create_model(output_type=output)
     callbacks = create_callbacks_array(folder_number=folder_number)
-    history = model.fit(train_dataset, epochs=10, callbacks=callbacks,
-                        validation_data=test_dataset)  # , validation_split=0.2
+    history = model.fit(train_dataset, epochs=epochs, callbacks=callbacks,
+                        validation_data=test_dataset)
     visualize_history(history=history, folder_number=folder_number)
 
 
