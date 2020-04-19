@@ -130,4 +130,4 @@ def timeIt(function, args_list):
 
 
 if __name__ == '__main__':
-    timeIt(produce_data_actions, [1000, MCTSBot(iterations=1000)])
+    timeIt(produce_data_actions, [10000, MCTSBot(iterations=2000)])

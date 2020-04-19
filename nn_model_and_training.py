@@ -2,8 +2,9 @@ import pandas as pd
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import models, layers
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, RandomizedSearchCV
 import matplotlib.pyplot as plt
+from tensorflow_core.python.keras.wrappers.scikit_learn import KerasClassifier
 
 
 def create_input_data_pipeline():
@@ -54,7 +55,7 @@ def load_data_winners_pandas():
     return dataset
 
 
-def load_data_pandas(folder_number=1, output_type='winners', batch_size=50, shuffle_cache=1000):
+def load_data_to_array(folder_number=1, output_type='winners'):
     csv_folder = 'data/' + str(folder_number) + '/'
 
     states = pd.read_csv(csv_folder + 'states.csv').to_numpy()
@@ -65,6 +66,10 @@ def load_data_pandas(folder_number=1, output_type='winners', batch_size=50, shuf
     states_train, states_test, output_train, output_test = train_test_split(states, outputs, test_size=0.33,
                                                                             random_state=42)
 
+    return states_train, states_test, output_train, output_test
+
+
+def create_dataset_from_arrays(states_train, states_test, output_train, output_test, batch_size=32, shuffle_cache=1000):
     train_dataset = tf.data.Dataset.from_tensor_slices((states_train, output_train))
     train_dataset = train_dataset.shuffle(shuffle_cache).batch(batch_size)
 
@@ -73,20 +78,28 @@ def load_data_pandas(folder_number=1, output_type='winners', batch_size=50, shuf
     return train_dataset, test_dataset
 
 
-def create_model(output_type='winners'):
+def load_data_pandas(folder_number=1, output_type='winners', batch_size=32, shuffle_cache=1000):
+    states_train, states_test, output_train, output_test = load_data_to_array(folder_number, output_type)
+    train_dataset, test_dataset = create_dataset_from_arrays(states_train, states_test, output_train, output_test,
+                                                             batch_size, shuffle_cache)
+
+    return train_dataset, test_dataset
+
+
+def create_model(output_type='winners', num_inner_nodes=16, inner_act_ft='relu'):
     model = models.Sequential()
     model.add(layers.Dense(
-        16,
-        activation="relu",
+        num_inner_nodes,
+        activation=inner_act_ft,
         input_shape=(9,)
     ))
-    model.add(layers.Dense(16, activation="relu"))
+    model.add(layers.Dense(num_inner_nodes, activation=inner_act_ft))
 
     if output_type == 'winners':
         model.add(layers.Dense(1, activation='tanh'))
         model.compile(
             optimizer="rmsprop",
-            loss="binary_crossentropy",  # or try 'hinge' loss function
+            loss="mse",  # binary_crossentropy does not work because cross entropy works in range 0 .. 1
             metrics=["accuracy"]
         )
 
@@ -94,7 +107,7 @@ def create_model(output_type='winners'):
         model.add(layers.Dense(9, activation='softmax'))
         model.compile(
             optimizer="rmsprop",
-            loss="categorical_crossentropy",
+            loss="categorical_crossentropy",  # or try 'hinge' loss function
             metrics=["accuracy"]
         )
 
@@ -110,6 +123,9 @@ def create_callbacks_array(folder_number=12):
         min_delta=1e-2,
         # "no longer improving" being further defined as "for at least 2 epochs"
         patience=2,
+
+        # Should we set restore best values = True here to set model to best values ?
+
         verbose=1)
     model_checkpoint = tf.keras.callbacks.ModelCheckpoint(
         filepath=folder + 'mymodel',  # _{epoch}
@@ -155,20 +171,46 @@ def visualize_history(history, folder_number):
     # plt.show()
 
 
-def train_model():
-    folder_number = 12
-    batch_size = 50
-    epochs = 30
-    output = 'actions'
-
+def train_model(folder_number=13, output='actions', batch_size=32, epochs=30, num_inner_nodes=32, inner_act_ft='relu'):
     train_dataset, test_dataset = load_data_pandas(folder_number=folder_number, output_type=output,
                                                    batch_size=batch_size)
-    model = create_model(output_type=output)
+    model = create_model(output_type=output, num_inner_nodes=num_inner_nodes, inner_act_ft=inner_act_ft)
     callbacks = create_callbacks_array(folder_number=folder_number)
     history = model.fit(train_dataset, epochs=epochs, callbacks=callbacks,
                         validation_data=test_dataset)
     visualize_history(history=history, folder_number=folder_number)
 
 
+def load_and_reuse_model(folder_number=12):
+    folder = 'data/' + str(folder_number) + '/mymodel'
+    new_model = tf.keras.models.load_model(folder)
+
+    test_input = np.asarray([np.zeros(9, dtype=np.int32)])
+    label = new_model.predict(test_input)
+    print(label)
+    # Check its architecture
+    # new_model.summary()
+
+
+def hyperparam_tuning_sklearn(folder_number=14, output_type='actions', epochs=15, batch_size=32):
+    states_train, states_test, output_train, output_test = load_data_to_array(folder_number=folder_number,
+                                                                              output_type=output_type)
+
+    poss_values_num_inner_nodes = [16, 32, 64]
+    poss_values_batch_size = [32, 64, 128]
+    params = dict(num_inner_nodes=poss_values_num_inner_nodes, batch_size=poss_values_batch_size)
+    model = KerasClassifier(build_fn=create_model, epochs=epochs, batch_size=batch_size)
+
+    np.random.seed(42)
+
+    rscv = RandomizedSearchCV(model, param_distributions=params, cv=3, n_iter=15)
+    rscv_results = rscv.fit(states_train, output_train)
+
+    print('Best score is: {} using {}'.format(rscv_results.best_score_,
+                                              rscv_results.best_params_))
+
+
 if __name__ == '__main__':
-    train_model()
+    # load_and_reuse_model(13)
+    # train_model(folder_number=13, output='actions', batch_size=64, epochs=30, num_inner_nodes=32, inner_act_ft='relu')
+    hyperparam_tuning_sklearn(folder_number=14, output_type='winners', epochs=15)
