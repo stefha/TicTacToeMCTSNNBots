@@ -140,6 +140,18 @@ class TestCheckMCTS(unittest.TestCase):
             only_right_action = only_right_action and action == 8
         self.assertTrue(only_right_action)
 
+    def test_simple_not_lose(self):
+        self.ttt.play_action(4)
+        self.ttt.play_action(3)
+        self.ttt.play_action(7)
+        self.ttt.play_action(5)
+        self.ttt.play_action(6)
+        only_right_action = True
+        for count in range(10):
+            action = self.mcts_bot.select_action(self.ttt)
+            only_right_action = only_right_action and (action == 1 or action == 2 or action == 8)
+        self.assertTrue(only_right_action)
+
 
 class TestBots(unittest.TestCase):
     def test_good_bot(self):

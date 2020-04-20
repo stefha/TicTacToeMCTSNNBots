@@ -1,7 +1,7 @@
 import os
 
 import tictactoe_game
-from bots import MCTSBot, RandBot
+from bots import MCTSBot, RandBot, NNBot
 from definitions import PLAYER_X, PLAYER_O, DRAW, PLAYERS, DEBUG_PRINT, GAME_STILL_RUNNING
 from timeit import default_timer as timer
 import numpy as np
@@ -130,4 +130,5 @@ def timeIt(function, args_list):
 
 
 if __name__ == '__main__':
-    timeIt(produce_data_actions, [10000, MCTSBot(iterations=2000)])
+    timeIt(play_many_games, [10, 3, NNBot(14), MCTSBot(50000)])
+    # timeIt(produce_data_actions, [10000, MCTSBot(iterations=2000)])

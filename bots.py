@@ -5,6 +5,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from graphviz import Digraph
 
+from nn_model_and_training import load_model
 from tictactoe_game import stringify_field_value
 from definitions import DRAW, GAME_STILL_RUNNING
 
@@ -55,6 +56,21 @@ class GoodBot(Bot):
             return rand_action
 
 
+class NNBot(Bot):
+
+    def __init__(self, folder_number=14):
+        self.model = load_model(14)
+
+    def select_action(self, game):
+        state = np.asarray([np.asarray(game.state)])
+        prediction = self.model.predict(state)
+        pred_action = np.argmax(prediction)
+        if pred_action in game.avail_actions:
+            return pred_action
+        else:
+            return game.avail_actions[math.floor(random.random() * len(game.avail_actions))]
+
+
 class MCTSBot(Bot):
 
     def __init__(self, iterations=1000, exploration=0.3):
@@ -101,7 +117,7 @@ class MCTSBot(Bot):
         return rand_action
 
     def calculate_uct_value(self, node):
-        domain_value = node.wins / node.visit_count
+        domain_value = node.score / node.visit_count
         exploration_value = self.exploration * (
             math.sqrt((2 * math.log(node.parent.visit_count)) / node.visit_count))
         node.exploration_value = exploration_value
@@ -120,7 +136,11 @@ class MCTSBot(Bot):
         while node != self.root:
             node.visit_count += 1
             if sim_winner == node.parent.game.current_player:
-                node.wins += 1
+                node.score += 1
+            elif sim_winner == -1 * node.parent.game.current_player:
+                node.score -= 1
+            else:
+                node.score += 0.001  # Small positive value for draw
             node = node.parent
         # Increment root visit count
         node.visit_count += 1
@@ -131,7 +151,7 @@ class MCTSNode:
         self.game = game
         self.children = []
         self.incoming_action = incoming_action
-        self.wins = 0
+        self.score = 0
         self.visit_count = 0
         self.parent = parent
         self.exploration_value = 0
@@ -158,7 +178,7 @@ def add_children_to_tree(id, tree, node, node_name):
             wins = 'W' + stringify_winner(child.game.winner)
         child_name = 'ID' + str(id) + wins + '\n' + list_to_str(child.game.state)  #
         tree.node(child_name)
-        edge_label = 'A: ' + str(child.incoming_action) + 'W: ' + str(child.wins) + ' V: ' + str(
+        edge_label = 'A: ' + str(child.incoming_action) + 'W: ' + str(child.score) + ' V: ' + str(
             child.visit_count) + ' D: ' + str(
             child.domain_value)[0:4] + ' UCT: ' + str(child.domain_value + child.exploration_value)[0:4]
         tree.edge(node_name, child_name, edge_label)

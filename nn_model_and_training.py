@@ -181,12 +181,17 @@ def train_model(folder_number=13, output='actions', batch_size=32, epochs=30, nu
     visualize_history(history=history, folder_number=folder_number)
 
 
-def load_and_reuse_model(folder_number=12):
+def load_model(folder_number=12):
     folder = 'data/' + str(folder_number) + '/mymodel'
-    new_model = tf.keras.models.load_model(folder)
+    model = tf.keras.models.load_model(folder)
+    return model
+
+
+def load_and_reuse_model(folder_number=12):
+    model = load_model(folder_number)
 
     test_input = np.asarray([np.zeros(9, dtype=np.int32)])
-    label = new_model.predict(test_input)
+    label = model.predict(test_input)
     print(label)
     # Check its architecture
     # new_model.summary()
@@ -212,5 +217,6 @@ def hyperparam_tuning_sklearn(folder_number=14, output_type='actions', epochs=15
 
 if __name__ == '__main__':
     # load_and_reuse_model(13)
-    # train_model(folder_number=13, output='actions', batch_size=64, epochs=30, num_inner_nodes=32, inner_act_ft='relu')
-    hyperparam_tuning_sklearn(folder_number=14, output_type='winners', epochs=15)
+    train_model(folder_number=14, output='actions', batch_size=64, epochs=30, num_inner_nodes=32, inner_act_ft='relu')
+    # train_model(folder_number=14, output='winners', batch_size=32, epochs=30, num_inner_nodes=16, inner_act_ft='relu')
+    # hyperparam_tuning_sklearn(folder_number=14, output_type='actions', epochs=20)
