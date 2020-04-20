@@ -1,7 +1,7 @@
 import os
 
 import tictactoe_game
-from bots import MCTSBot, RandBot, NNBot
+from bots import MCTSBot, RandBot, NNActionsBot, NNStateBot
 from definitions import PLAYER_X, PLAYER_O, DRAW, PLAYERS, DEBUG_PRINT, GAME_STILL_RUNNING
 from timeit import default_timer as timer
 import numpy as np
@@ -30,12 +30,12 @@ def produce_data_actions(number_of_games, bot):
         temp_winner_list = list()
         while winner == GAME_STILL_RUNNING:
             action = bot.select_action(game)
-            state = np.copy(game.state).tolist()
+            state = np.copy(game.state).tolist()  # copy required ?
             perspective_indicator = 1
-            if game.turn % 2 == 1:
-                state = np.multiply(state, -1)  # always show the game state form perspective of player 1
-                perspective_indicator = perspective_indicator * -1
-            #           state_list.append(state)
+            # if game.turn % 2 == 1:
+            #     state = np.multiply(state, -1)  # always show the game state form perspective of player 1
+            #     perspective_indicator = perspective_indicator * -1
+
             state_list0.append(state[0])
             state_list1.append(state[1])
             state_list2.append(state[2])
@@ -46,11 +46,12 @@ def produce_data_actions(number_of_games, bot):
             state_list7.append(state[7])
             state_list8.append(state[8])
             action_list.append(action)
-            temp_winner_list.append(perspective_indicator)
+            # temp_winner_list.append(perspective_indicator)
             winner = game.play_action(action)
 
-        temp_winner_list = [perspective_indicator * winner for perspective_indicator in temp_winner_list]
-        winner_list.extend(temp_winner_list)
+        # temp_winner_list = [perspective_indicator * winner for perspective_indicator in temp_winner_list]
+        # winner_list.extend(temp_winner_list)
+        winner_list.extend([winner] * game.turn)
 
     next_data_directory = find_and_create_next_data_directory_name()
 
@@ -61,14 +62,14 @@ def produce_data_actions(number_of_games, bot):
     df_actions = pd.DataFrame({"action": action_list})
     df_winners = pd.DataFrame({"winner": winner_list})
 
-    total_data_list = list(
-        zip(action_list, winner_list, state_list0, state_list1, state_list2, state_list3, state_list4, state_list5,
-            state_list6, state_list7, state_list8))
-    df_all_data = pd.DataFrame(total_data_list,
-                               columns=['Action', 'Winner', 'State0', 'State1', 'State2', 'State3', 'State4', 'State5',
-                                        'State6', 'State7', 'State8'])
-
-    df_all_data.to_csv(next_data_directory + 'all_data.csv', index=False)
+    # total_data_list = list(
+    #     zip(action_list, winner_list, state_list0, state_list1, state_list2, state_list3, state_list4, state_list5,
+    #         state_list6, state_list7, state_list8))
+    # df_all_data = pd.DataFrame(total_data_list,
+    #                            columns=['Action', 'Winner', 'State0', 'State1', 'State2', 'State3', 'State4', 'State5',
+    #                                     'State6', 'State7', 'State8'])
+    #
+    # df_all_data.to_csv(next_data_directory + 'all_data.csv', index=False)
     df_states.to_csv(next_data_directory + 'states.csv', index=False)
     df_actions.to_csv(next_data_directory + 'actions.csv', index=False)
     df_winners.to_csv(next_data_directory + 'winners.csv', index=False)
@@ -130,5 +131,5 @@ def timeIt(function, args_list):
 
 
 if __name__ == '__main__':
-    timeIt(play_many_games, [10, 3, NNBot(14), MCTSBot(50000)])
-    # timeIt(produce_data_actions, [10000, MCTSBot(iterations=2000)])
+    # timeIt(play_many_games, [10, 3, NNStateBot(14), NNActionsBot(14)])
+    timeIt(produce_data_actions, [10, MCTSBot(iterations=20)])

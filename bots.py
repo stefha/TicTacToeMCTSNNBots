@@ -56,10 +56,10 @@ class GoodBot(Bot):
             return rand_action
 
 
-class NNBot(Bot):
+class NNActionsBot(Bot):
 
     def __init__(self, folder_number=14):
-        self.model = load_model(14)
+        self.model = load_model(folder_number)
 
     def select_action(self, game):
         state = np.asarray([np.asarray(game.state)])
@@ -69,6 +69,27 @@ class NNBot(Bot):
             return pred_action
         else:
             return game.avail_actions[math.floor(random.random() * len(game.avail_actions))]
+
+
+class NNStateBot(Bot):
+
+    def __init__(self, folder_number):
+        self.model = load_model(folder_number)
+
+    def select_action(self, game):
+        possible_outcomes = []
+        #  invert state ?? like is done with training data
+        for action in game.avail_actions:
+            new_game = game.clone()
+            new_state = new_game.state
+            new_state[action] = game.current_player
+            new_state_as_input = np.asarray([np.asarray(new_state)])
+            predicted_outcome = self.model.predict(new_state_as_input)
+            possible_outcomes.append(predicted_outcome)
+
+        index_best_outcome = np.argmax(possible_outcomes)
+        best_action = game.avail_actions[index_best_outcome]
+        return best_action
 
 
 class MCTSBot(Bot):

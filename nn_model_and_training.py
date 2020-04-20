@@ -5,57 +5,58 @@ from tensorflow.keras import models, layers
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 import matplotlib.pyplot as plt
 from tensorflow_core.python.keras.wrappers.scikit_learn import KerasClassifier
+from definitions import WINNERS, ACTIONS
 
 
-def create_input_data_pipeline():
-    csv_file = 'data/8/all_data.csv'
+# def create_input_data_pipeline():
+#     csv_file = 'data/8/all_data.csv'
+#
+#     input_data_pipeline = tf.data.experimental.make_csv_dataset(csv_file, batch_size=9, label_name='Action',
+#                                                                 select_columns=['Action', 'State0', 'State1', 'State2',
+#                                                                                 'State3', 'State4', 'State5', 'State6',
+#                                                                                 'State7', 'State8'])
+#     input_batches = (input_data_pipeline.cache().repeat().shuffle(500)).prefetch(tf.data.experimental.AUTOTUNE)
+#     return input_batches
+#
+#
+# def test_load_data():
+#     input_data_pipeline = create_input_data_pipeline()
+#     for feature_batch, label_batch in input_data_pipeline.take(1):
+#         print('Actions: {}'.format(label_batch))
+#         for key, value in feature_batch.items():
+#             print("  {!r:20s}: {}".format(key, value))
+#
+#
+# def load_data_constants_test():
+#     labels = tf.constant([4, 0, 2, 6, 3, 5])
+#     features = tf.constant([[0, 0, 0, 0, 1, 0, 0, 0, 0], [-1, 0, 0, 0, 1, 0, 0, 0, 0], [-1, 0, 1, 0, 1, 0, 0, 0, 0],
+#                             [-1, 0, 1, 0, 1, 0, -1, 0, 0], [-1, 0, 1, 1, 1, 0, -1, 0, 0],
+#                             [-1, 0, 1, 1, 1, -1, -1, 0, 0]])
+#     dataset = tf.data.Dataset.from_tensor_slices((features, labels))
+#     # features_dataset = tf.data.Dataset.from_tensor_slices(features)
+#     # labels_dataset = tf.data.Dataset.from_tensor_slices(labels)
+#     # dataset = tf.data.Dataset.zip((features_dataset, labels_dataset))
+#     for element in dataset:
+#         print(element)
+#
+#
+# def load_data_winners_pandas():
+#     csv_folder = 'data/9/'
+#     states = pd.read_csv(csv_folder + 'states.csv')
+#     numpy_states = states.to_numpy()
+#     reformatted_states = numpy_states
+#     print(reformatted_states.shape)
+#
+#     actions = pd.read_csv(csv_folder + 'winners.csv')
+#     actions_reformatted = actions.to_numpy().flatten()
+#     print(actions_reformatted.shape)
+#
+#     dataset = tf.data.Dataset.from_tensor_slices((reformatted_states, actions_reformatted))
+#     dataset = dataset.shuffle(1000).batch(32)
+#     return dataset
 
-    input_data_pipeline = tf.data.experimental.make_csv_dataset(csv_file, batch_size=9, label_name='Action',
-                                                                select_columns=['Action', 'State0', 'State1', 'State2',
-                                                                                'State3', 'State4', 'State5', 'State6',
-                                                                                'State7', 'State8'])
-    input_batches = (input_data_pipeline.cache().repeat().shuffle(500)).prefetch(tf.data.experimental.AUTOTUNE)
-    return input_batches
 
-
-def test_load_data():
-    input_data_pipeline = create_input_data_pipeline()
-    for feature_batch, label_batch in input_data_pipeline.take(1):
-        print('Actions: {}'.format(label_batch))
-        for key, value in feature_batch.items():
-            print("  {!r:20s}: {}".format(key, value))
-
-
-def load_data_constants_test():
-    labels = tf.constant([4, 0, 2, 6, 3, 5])
-    features = tf.constant([[0, 0, 0, 0, 1, 0, 0, 0, 0], [-1, 0, 0, 0, 1, 0, 0, 0, 0], [-1, 0, 1, 0, 1, 0, 0, 0, 0],
-                            [-1, 0, 1, 0, 1, 0, -1, 0, 0], [-1, 0, 1, 1, 1, 0, -1, 0, 0],
-                            [-1, 0, 1, 1, 1, -1, -1, 0, 0]])
-    dataset = tf.data.Dataset.from_tensor_slices((features, labels))
-    # features_dataset = tf.data.Dataset.from_tensor_slices(features)
-    # labels_dataset = tf.data.Dataset.from_tensor_slices(labels)
-    # dataset = tf.data.Dataset.zip((features_dataset, labels_dataset))
-    for element in dataset:
-        print(element)
-
-
-def load_data_winners_pandas():
-    csv_folder = 'data/9/'
-    states = pd.read_csv(csv_folder + 'states.csv')
-    numpy_states = states.to_numpy()
-    reformatted_states = numpy_states
-    print(reformatted_states.shape)
-
-    actions = pd.read_csv(csv_folder + 'winners.csv')
-    actions_reformatted = actions.to_numpy().flatten()
-    print(actions_reformatted.shape)
-
-    dataset = tf.data.Dataset.from_tensor_slices((reformatted_states, actions_reformatted))
-    dataset = dataset.shuffle(1000).batch(32)
-    return dataset
-
-
-def load_data_to_array(folder_number=1, output_type='winners'):
+def load_data_to_array(folder_number, output_type):
     csv_folder = 'data/' + str(folder_number) + '/'
 
     states = pd.read_csv(csv_folder + 'states.csv').to_numpy()
@@ -78,7 +79,7 @@ def create_dataset_from_arrays(states_train, states_test, output_train, output_t
     return train_dataset, test_dataset
 
 
-def load_data_pandas(folder_number=1, output_type='winners', batch_size=32, shuffle_cache=1000):
+def load_data_pandas(folder_number, output_type, batch_size=32, shuffle_cache=1000):
     states_train, states_test, output_train, output_test = load_data_to_array(folder_number, output_type)
     train_dataset, test_dataset = create_dataset_from_arrays(states_train, states_test, output_train, output_test,
                                                              batch_size, shuffle_cache)
@@ -86,7 +87,7 @@ def load_data_pandas(folder_number=1, output_type='winners', batch_size=32, shuf
     return train_dataset, test_dataset
 
 
-def create_model(output_type='winners', num_inner_nodes=16, inner_act_ft='relu'):
+def create_model(output_type, num_inner_nodes=32, inner_act_ft='relu'):
     model = models.Sequential()
     model.add(layers.Dense(
         num_inner_nodes,
@@ -95,7 +96,7 @@ def create_model(output_type='winners', num_inner_nodes=16, inner_act_ft='relu')
     ))
     model.add(layers.Dense(num_inner_nodes, activation=inner_act_ft))
 
-    if output_type == 'winners':
+    if output_type == WINNERS:
         model.add(layers.Dense(1, activation='tanh'))
         model.compile(
             optimizer="rmsprop",
@@ -103,7 +104,7 @@ def create_model(output_type='winners', num_inner_nodes=16, inner_act_ft='relu')
             metrics=["accuracy"]
         )
 
-    elif output_type == 'actions':
+    elif output_type == ACTIONS:
         model.add(layers.Dense(9, activation='softmax'))
         model.compile(
             optimizer="rmsprop",
@@ -114,7 +115,7 @@ def create_model(output_type='winners', num_inner_nodes=16, inner_act_ft='relu')
     return model
 
 
-def create_callbacks_array(folder_number=12):
+def create_callbacks_array(folder_number, output):
     folder = './data/' + str(folder_number) + '/'
     early_stopping = tf.keras.callbacks.EarlyStopping(
         # Stop training when `val_loss` is no longer improving
@@ -128,7 +129,7 @@ def create_callbacks_array(folder_number=12):
 
         verbose=1)
     model_checkpoint = tf.keras.callbacks.ModelCheckpoint(
-        filepath=folder + 'mymodel',  # _{epoch}
+        filepath=folder + 'mymodel_' + output,  # _{epoch}
         # Path where to save the model
         # The two parameters below mean that we will overwrite
         # the current checkpoint if and only if
@@ -171,24 +172,24 @@ def visualize_history(history, folder_number):
     # plt.show()
 
 
-def train_model(folder_number=13, output='actions', batch_size=32, epochs=30, num_inner_nodes=32, inner_act_ft='relu'):
+def train_model(folder_number, output, batch_size=32, epochs=30, num_inner_nodes=32, inner_act_ft='relu'):
     train_dataset, test_dataset = load_data_pandas(folder_number=folder_number, output_type=output,
                                                    batch_size=batch_size)
     model = create_model(output_type=output, num_inner_nodes=num_inner_nodes, inner_act_ft=inner_act_ft)
-    callbacks = create_callbacks_array(folder_number=folder_number)
+    callbacks = create_callbacks_array(folder_number=folder_number, output=output)
     history = model.fit(train_dataset, epochs=epochs, callbacks=callbacks,
                         validation_data=test_dataset)
     visualize_history(history=history, folder_number=folder_number)
 
 
-def load_model(folder_number=12):
-    folder = 'data/' + str(folder_number) + '/mymodel'
+def load_model(folder_number, output):
+    folder = 'data/' + str(folder_number) + '/mymodel_' + output
     model = tf.keras.models.load_model(folder)
     return model
 
 
-def load_and_reuse_model(folder_number=12):
-    model = load_model(folder_number)
+def load_and_reuse_model(folder_number, output):
+    model = load_model(folder_number, output)
 
     test_input = np.asarray([np.zeros(9, dtype=np.int32)])
     label = model.predict(test_input)
@@ -216,7 +217,7 @@ def hyperparam_tuning_sklearn(folder_number=14, output_type='actions', epochs=15
 
 
 if __name__ == '__main__':
-    # load_and_reuse_model(13)
-    train_model(folder_number=14, output='actions', batch_size=64, epochs=30, num_inner_nodes=32, inner_act_ft='relu')
+    # load_and_reuse_model(13,'actions')
+    train_model(folder_number=14, output=ACTIONS, batch_size=64, epochs=30, num_inner_nodes=32, inner_act_ft='relu')
     # train_model(folder_number=14, output='winners', batch_size=32, epochs=30, num_inner_nodes=16, inner_act_ft='relu')
     # hyperparam_tuning_sklearn(folder_number=14, output_type='actions', epochs=20)
