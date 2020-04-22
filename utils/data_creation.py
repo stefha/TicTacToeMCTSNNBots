@@ -1,8 +1,8 @@
 import os
 
-import tictactoe_game
-from bots import MCTSBot, RandBot, NNActionsBot, NNStateBot
-from definitions import PLAYER_X, PLAYER_O, DRAW, PLAYERS, DEBUG_PRINT, GAME_STILL_RUNNING
+from games import tictactoe
+from bots import MCTSBot, RandBot, NNStateBot
+from definitions import PLAYER_X, PLAYER_O, DRAW, DEBUG_PRINT, GAME_STILL_RUNNING
 from timeit import default_timer as timer
 import numpy as np
 import pandas as pd
@@ -25,7 +25,7 @@ def produce_data_actions(number_of_games, bot):
     for count in range(number_of_games):
         if count % 100 == 0:
             print(str(count))
-        game = tictactoe_game.TicTacToe(3)
+        game = tictactoe.TicTacToe(3)
         winner = GAME_STILL_RUNNING
         temp_winner_list = list()
         while winner == GAME_STILL_RUNNING:
@@ -76,7 +76,7 @@ def produce_data_actions(number_of_games, bot):
 
 
 def find_and_create_next_data_directory_name():
-    os.chdir('data')
+    os.chdir('../data')
     data_directory_list = os.listdir()
     next_directory_number = np.max([int(i) for i in data_directory_list]) + 1
     next_data_directory = '../data/' + str(next_directory_number) + '/'
@@ -85,7 +85,7 @@ def find_and_create_next_data_directory_name():
 
 
 def play_game_till_end(size, bot_x, bot_o):
-    ttt = tictactoe_game.TicTacToe(size)
+    ttt = tictactoe.TicTacToe(size)
     game_ended = GAME_STILL_RUNNING
     player = PLAYER_X
     bots = [bot_x, bot_o]

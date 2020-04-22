@@ -2,13 +2,13 @@ import unittest
 import numpy as np
 
 import bots
-import tictactoe_game
+from games import tictactoe
 
 
 class tree_Plotting_Tests(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.ttt = tictactoe_game.TicTacToe(3)
+        self.ttt = tictactoe.TicTacToe(3)
         self.mcts_bot = bots.MCTSBot(1000)
 
     def test_full_tree_plotting(self):

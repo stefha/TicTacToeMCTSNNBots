@@ -6,8 +6,8 @@ from definitions import ACTIONS, WINNERS
 import numpy as np
 from graphviz import Digraph
 
-from nn_model_and_training import load_model
-from tictactoe_game import stringify_field_value
+from nn.nn_model_and_training import load_model
+from games.tictactoe import stringify_field_value
 from definitions import DRAW, GAME_STILL_RUNNING
 
 

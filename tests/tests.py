@@ -1,16 +1,13 @@
 import unittest
-from timeit import timeit
-
-import numpy as np
 
 import bots
-import tictactoe_game
+from games import tictactoe
 
 
 class TestCheckWinner(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.ttt = tictactoe_game.TicTacToe(3)
+        self.ttt = tictactoe.TicTacToe(3)
 
     def test_diag_1_win(self):
         self.ttt.play_action(0)
@@ -70,7 +67,7 @@ class TestCheckWinner(unittest.TestCase):
 class TestCheckMCTS(unittest.TestCase):
 
     def setUp(self) -> None:
-        self.ttt = tictactoe_game.TicTacToe(3)
+        self.ttt = tictactoe.TicTacToe(3)
         self.mcts_bot = bots.MCTSBot(1000)
 
     def test_simple_win_player_1_line(self):
@@ -155,7 +152,7 @@ class TestCheckMCTS(unittest.TestCase):
 
 class TestBots(unittest.TestCase):
     def test_good_bot(self):
-        tictactoe_game.play_many_games, [1, 3, bots.GoodBot(), bots.RandBot()]
+        tictactoe.play_many_games, [1, 3, bots.GoodBot(), bots.RandBot()]
 
 
 if __name__ == '__main__':
