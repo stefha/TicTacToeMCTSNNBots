@@ -1,6 +1,7 @@
 import math
 import random
 from abc import ABC, abstractmethod
+from definitions import ACTIONS, WINNERS
 
 import numpy as np
 from graphviz import Digraph
@@ -59,7 +60,7 @@ class GoodBot(Bot):
 class NNActionsBot(Bot):
 
     def __init__(self, folder_number=14):
-        self.model = load_model(folder_number)
+        self.model = load_model(folder_number, ACTIONS)
 
     def select_action(self, game):
         state = np.asarray([np.asarray(game.state)])
@@ -74,7 +75,7 @@ class NNActionsBot(Bot):
 class NNStateBot(Bot):
 
     def __init__(self, folder_number):
-        self.model = load_model(folder_number)
+        self.model = load_model(folder_number, output=WINNERS)
 
     def select_action(self, game):
         possible_outcomes = []
@@ -87,7 +88,10 @@ class NNStateBot(Bot):
             predicted_outcome = self.model.predict(new_state_as_input)
             possible_outcomes.append(predicted_outcome)
 
-        index_best_outcome = np.argmax(possible_outcomes)
+        if game.current_player == 1:
+            index_best_outcome = np.argmax(possible_outcomes)
+        elif game.current_player == -1:
+            index_best_outcome = np.argmin(possible_outcomes)
         best_action = game.avail_actions[index_best_outcome]
         return best_action
 

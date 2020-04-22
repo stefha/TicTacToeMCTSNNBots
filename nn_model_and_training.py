@@ -5,7 +5,7 @@ from tensorflow.keras import models, layers
 from sklearn.model_selection import train_test_split, RandomizedSearchCV
 import matplotlib.pyplot as plt
 from tensorflow_core.python.keras.wrappers.scikit_learn import KerasClassifier
-from definitions import WINNERS, ACTIONS
+from definitions import WINNERS, ACTIONS, DATA_ROOT
 
 
 # def create_input_data_pipeline():
@@ -116,7 +116,7 @@ def create_model(output_type, num_inner_nodes=32, inner_act_ft='relu'):
 
 
 def create_callbacks_array(folder_number, output):
-    folder = './data/' + str(folder_number) + '/'
+    folder = DATA_ROOT + str(folder_number) + '/'
     early_stopping = tf.keras.callbacks.EarlyStopping(
         # Stop training when `val_loss` is no longer improving
         monitor='val_loss',
@@ -183,7 +183,7 @@ def train_model(folder_number, output, batch_size=32, epochs=30, num_inner_nodes
 
 
 def load_model(folder_number, output):
-    folder = 'data/' + str(folder_number) + '/mymodel_' + output
+    folder = DATA_ROOT + str(folder_number) + '/mymodel_' + output
     model = tf.keras.models.load_model(folder)
     return model
 
@@ -217,7 +217,8 @@ def hyperparam_tuning_sklearn(folder_number=14, output_type='actions', epochs=15
 
 
 if __name__ == '__main__':
-    # load_and_reuse_model(13,'actions')
-    train_model(folder_number=14, output=ACTIONS, batch_size=64, epochs=30, num_inner_nodes=32, inner_act_ft='relu')
+    # load_and_reuse_model(15,ACTIONS)
+    train_model(folder_number=16, output=ACTIONS, batch_size=64, epochs=40, num_inner_nodes=32, inner_act_ft='relu')
+    train_model(folder_number=16, output=WINNERS, batch_size=64, epochs=40, num_inner_nodes=32, inner_act_ft='relu')
     # train_model(folder_number=14, output='winners', batch_size=32, epochs=30, num_inner_nodes=16, inner_act_ft='relu')
     # hyperparam_tuning_sklearn(folder_number=14, output_type='actions', epochs=20)

@@ -131,5 +131,7 @@ def timeIt(function, args_list):
 
 
 if __name__ == '__main__':
-    # timeIt(play_many_games, [10, 3, NNStateBot(14), NNActionsBot(14)])
-    timeIt(produce_data_actions, [10, MCTSBot(iterations=20)])
+    # timeIt(play_many_games, [10, 3, NNActionsBot(16), NNStateBot(16)])
+    timeIt(play_many_games, [10, 3, MCTSBot(1000), NNStateBot(16)])
+    # timeIt(play_many_games, [10, 3, NNActionsBot(16), NNActionsBot(16)])
+    # timeIt(produce_data_actions, [1000000, RandBot()]) # MCTSBot(iterations=5000)
